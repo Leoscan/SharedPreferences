@@ -1,81 +1,83 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Escolha entre Cachorro ou Gato',
-      home: const Home(),
+      home: MyHomePage(),
     );
   }
 }
 
-class Home extends StatefulWidget {
-  const Home({Key? key});
-
+class MyHomePage extends StatefulWidget {
   @override
-  _HomeState createState() => _HomeState();
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _HomeState extends State<Home> {
-  String _imagemUrl = '';
+class _MyHomePageState extends State<MyHomePage> {
+  TextEditingController _controller = TextEditingController();
+  List<String> _storedNumbers = [];
 
-  void _escolherOpcao(String escolha) {
+  @override
+  void initState() {
+    super.initState();
+    _loadStoredNumbers();
+  }
+
+  _loadStoredNumbers() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      if (escolha == 'Cachorro') {
-        _imagemUrl =
-            'https://media.istockphoto.com/id/479809942/pt/foto/dachshund-isolado-no-fundo-branco-castanha-de-c%C3%A3o-olhando-para-cima.jpg?s=612x612&w=0&k=20&c=cW3WEgg8FhvxQgnG1u7HyCiMHzpqwm-8rJjC3McCdb0='; // Substitua pela URL da imagem do cachorro
-      } else if (escolha == 'Gato') {
-        _imagemUrl =
-            'https://png.pngtree.com/thumb_back/fw800/background/20210831/pngtree-cat-carrying-one-leg-of-a-cat-white-background-image_769565.jpg'; // Substitua pela URL da imagem do gato
-      } else if (escolha == 'Gosto dos dois') {
-        _imagemUrl =
-            'https://media.istockphoto.com/id/504907820/pt/foto/cachorrinho-e-dachshund-filhote-de-gato.jpg?s=1024x1024&w=is&k=20&c=QH5Isq5CrSxr2u0HGfPI_4mTDSZvd7rmhVGbud0vBs0='; // Substitua pela URL da imagem de ambos
-      }
+      _storedNumbers = prefs.getStringList('numbers') ?? [];
     });
+  }
+
+  _saveNumber(String number) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _storedNumbers.add(number);
+    await prefs.setStringList('numbers', _storedNumbers);
+  }
+
+  _onOkButtonPressed() {
+    String inputNumber = _controller.text;
+    _saveNumber(inputNumber);
+    _loadStoredNumbers();
+    _controller.clear();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Escolha entre cachorro ou gato'),
+        title: Text('Armazenamento Números'),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              'Você prefere Cachorro ou Gato?',
-              style: TextStyle(fontSize: 18),
+            Text('Números Armazenados:'),
+            Column(
+              children: _storedNumbers.map((number) {
+                return Text(number);
+              }).toList(),
             ),
-            SizedBox(height: 20),
+            TextField(
+              controller: _controller,
+              keyboardType: TextInputType.number,
+              minLines: 1,
+              decoration: InputDecoration(
+                labelText: 'Digite um número',
+                prefixIcon: Icon(Icons.format_list_numbered),
+              ),
+            ),
             ElevatedButton(
-              onPressed: () => _escolherOpcao('Cachorro'),
-              child: Text('Cachorro'),
+              onPressed: _onOkButtonPressed,
+              child: Text('Enviar'),
             ),
-            ElevatedButton(
-              onPressed: () => _escolherOpcao('Gato'),
-              child: Text('Gato'),
-            ),
-            ElevatedButton(
-              onPressed: () => _escolherOpcao('Gosto dos dois'),
-              child: Text('Gosto dos dois'),
-            ),
-            SizedBox(height: 20),
-            _imagemUrl.isNotEmpty
-                ? Image.network(
-                    _imagemUrl,
-                    width: 200,
-                    height: 200,
-                  )
-                : Container(),
           ],
         ),
       ),
